@@ -16,6 +16,7 @@ from config import (
     V81_FALLBACK,
     V81_EXCEL,
     V81_CHECKPOINT,
+    MAX_NEW_PDFS_THIS_RUN as CONFIG_MAX_NEW_PDFS_THIS_RUN,
     ensure_folders,
 )
 
@@ -66,9 +67,10 @@ STATUS_DIR.mkdir(
 # Save after this many NEW PDFs.
 SAVE_EVERY = 10
 
-# None = process every remaining PDF.
-# Example: 500 = process 500 new PDFs this run and stop cleanly.
-MAX_NEW_PDFS_THIS_RUN = None
+# None = process every remaining PDF. Overridable via the
+# HOUSE_PTR_MAX_NEW_PDFS env var (see config.py) -- the GitHub Action uses
+# this as a safety chunk size for incremental runs.
+MAX_NEW_PDFS_THIS_RUN = CONFIG_MAX_NEW_PDFS_THIS_RUN
 
 # Leave FALSE for normal use and resume.
 # TRUE intentionally deletes V8 output/checkpoint files and starts over.
