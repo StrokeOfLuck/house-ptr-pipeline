@@ -1,0 +1,79 @@
+{
+  "years": [
+    {
+      "Year": 2021,
+      "House PTRs": 680,
+      "PDFs in Drive": 680,
+      "Matched": 680,
+      "Missing": 0,
+      "Extra": 0,
+      "Parser flagged": 115,
+      "Not yet parsed": 0,
+      "Complete": true
+    },
+    {
+      "Year": 2022,
+      "House PTRs": 624,
+      "PDFs in Drive": 624,
+      "Matched": 624,
+      "Missing": 0,
+      "Extra": 0,
+      "Parser flagged": 119,
+      "Not yet parsed": 0,
+      "Complete": true
+    },
+    {
+      "Year": 2023,
+      "House PTRs": 460,
+      "PDFs in Drive": 460,
+      "Matched": 460,
+      "Missing": 0,
+      "Extra": 0,
+      "Parser flagged": 72,
+      "Not yet parsed": 0,
+      "Complete": true
+    },
+    {
+      "Year": 2024,
+      "House PTRs": 451,
+      "PDFs in Drive": 451,
+      "Matched": 451,
+      "Missing": 0,
+      "Extra": 0,
+      "Parser flagged": 57,
+      "Not yet parsed": 0,
+      "Complete": true
+    },
+    {
+      "Year": 2025,
+      "House PTRs": 515,
+      "PDFs in Drive": 515,
+      "Matched": 515,
+      "Missing": 0,
+      "Extra": 0,
+      "Parser flagged": 66,
+      "Not yet parsed": 0,
+      "Complete": true
+    },
+    {
+      "Year": 2026,
+      "House PTRs": 375,
+      "PDFs in Drive": 364,
+      "Matched": 364,
+      "Missing": 11,
+      "Extra": 0,
+      "Parser flagged": 43,
+      "Not yet parsed": 0,
+      "Complete": false
+    }
+  ],
+  "totals": {
+    "house_ptrs": 3105,
+    "pdfs_in_drive": 3094,
+    "missing": 11,
+    "extra": 0,
+    "parser_flagged": 472,
+    "not_yet_parsed": 0,
+    "all_years_complete": false
+  }
+}

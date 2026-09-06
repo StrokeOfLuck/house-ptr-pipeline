@@ -1,0 +1,75 @@
+name: Scrape House PTRs
+
+on:
+  schedule:
+    # 9:30am US Eastern year-round; GitHub Actions' timezone-aware
+    # schedule syntax handles the EDT/EST shift automatically (no need for
+    # the two-cron-entry workaround used in the Senate scraper's workflow).
+    - cron: "30 9 * * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      max_new_pdfs:
+        description: "Override HOUSE_PTR_MAX_NEW_PDFS for this run (blank = use default)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run House PTR pipeline
+        env:
+          # Safety chunk size for incremental runs -- the repo is seeded
+          # with the full existing archive, so day-to-day this should only
+          # need to process a handful of genuinely new filings. Override
+          # via workflow_dispatch input if a larger catch-up run is needed.
+          HOUSE_PTR_MAX_NEW_PDFS: ${{ github.event.inputs.max_new_pdfs || '300' }}
+        run: python run_pipeline.py
+
+      - name: Commit and push updated data
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update House PTR data ($(date -u +%Y-%m-%d))"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify sean-data-portfolio to rebuild
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          SITE_DISPATCH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$SITE_DISPATCH_TOKEN" ]; then
+            echo "SITE_DISPATCH_TOKEN secret not set - skipping site rebuild dispatch."
+            exit 0
+          fi
+
+          curl -sSf -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $SITE_DISPATCH_TOKEN" \
+            https://api.github.com/repos/StrokeOfLuck/sean-data-portfolio/dispatches \
+            -d '{"event_type": "house-data-updated"}'
