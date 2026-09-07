@@ -1,53 +1,77 @@
-# House PTR Pipeline
+# House PTR Scraper
 
-Automated pipeline for official U.S. House Periodic Transaction Reports (PTRs).
+Collects and parses official U.S. House Periodic Transaction Reports (PTRs) into structured transaction data for analysis and web use.
 
-This repository is the code side of the project. The large source archive and
-persistent parser state remain in the existing Google Drive folder:
+The pipeline starts with the House Clerk's official annual disclosure indexes, downloads the corresponding PTR PDFs, checks archive completeness, extracts transactions from born-digital filings, resolves ticker edge cases, and publishes stable CSV files for downstream projects.
 
-`Congressional Trading Data/House_PTRs`
+## Official source
 
-## Pipeline
+House financial disclosure data is retrieved from the Clerk of the U.S. House of Representatives:
 
-1. Download missing official House PTR PDFs from the annual House XML indexes.
-2. Archive the official XML indexes and independently verify PDF completeness.
-3. Parse born-digital PTR PDFs with the V8.1 geometry parser.
-4. Resolve ticker edge cases with the V8.2 cleanup layer.
-5. Copy the current final dataset to a stable website filename and write metadata.
+https://disclosures-clerk.house.gov/
 
-## Current local setup
+The annual XML indexes identify PTR filings, and every parsed transaction retains a link back to the original House PDF.
 
-The default path is:
+## What the pipeline does
 
-`G:\My Drive\Congressional Trading Data\House_PTRs`
+1. Downloads missing official PTR PDFs listed in the House annual XML indexes.
+2. Archives the official XML indexes and verifies that expected PDFs are present.
+3. Parses born-digital PTR PDFs with the V8.1 geometry-based extraction pipeline.
+4. Resolves ticker and asset-name edge cases with the V8.2 cleanup stage.
+5. Publishes stable full and web-facing datasets plus metadata.
 
-Override it in PowerShell if Google Drive uses another location:
+The pipeline is resumable. Existing PDFs and completed parser checkpoint records are reused on later runs.
 
-```powershell
-$env:HOUSE_PTR_ROOT="G:\My Drive\Congressional Trading Data\House_PTRs"
+## Repository data
+
+The automated pipeline keeps its working archive in the repository under `data/`:
+
+```text
+data/
+├── 01_pdfs/           official House PTR PDFs by year
+├── 02_xml_indexes/    archived annual House disclosure indexes
+├── 03_verification/   completeness checks and summaries
+├── 04_transactions/   parsed and cleaned transaction tables
+├── 05_status/         parser checkpoints and review state
+└── 06_public/         stable downstream datasets
 ```
 
-## Set up Python
+The main published files are:
+
+```text
+data/06_public/house_ptr_transactions_latest.csv
+data/06_public/house_ptr_transactions_web.csv
+data/06_public/house_ptr_metadata.json
+```
+
+`house_ptr_transactions_latest.csv` preserves the full resolved transaction table. The smaller `house_ptr_transactions_web.csv` contains the fields used by the public-facing site.
+
+## Automation
+
+The repository includes a GitHub Actions workflow at `.github/workflows/scrape.yml`.
+
+It runs daily at approximately **9:30 AM America/New_York**, processes newly available filings, commits changes under `data/`, and can notify the `sean-data-portfolio` repository to rebuild when new House data is published.
+
+A manual workflow run can also override the maximum number of new PDFs processed in one run.
+
+## Run locally
+
+Create a virtual environment and install the requirements:
 
 ```powershell
-py -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## Run the full workflow
+Run the full pipeline:
 
 ```powershell
 python run_pipeline.py
 ```
 
-Because the original workflow is resumable, normal reruns should skip source
-PDFs and parser checkpoint records already completed.
-
-## Run only later stages
-
-Start with Stage 4:
+Start at a later stage:
 
 ```powershell
 python run_pipeline.py --from-stage 4
@@ -59,29 +83,35 @@ Publish only:
 python run_pipeline.py --from-stage 5
 ```
 
-## Website outputs
+## Configuration
 
-After a successful run:
+The default archive is `data/` inside the repository. Environment variables can override the main runtime settings without editing code.
 
-`07 Public Website Data/house_ptr_transactions_latest.csv`
+Common options include:
 
-`07 Public Website Data/house_ptr_metadata.json`
+```text
+HOUSE_PTR_ROOT
+HOUSE_PTR_START_YEAR
+HOUSE_PTR_END_YEAR
+HOUSE_PTR_MAX_NEW_PDFS
+```
 
-Those stable filenames are what the portfolio site should consume.
+For example:
+
+```powershell
+$env:HOUSE_PTR_START_YEAR="2025"
+$env:HOUSE_PTR_MAX_NEW_PDFS="100"
+python run_pipeline.py
+```
+
+## Data quality and review
+
+House PTRs are PDFs, so document layout and extraction quality vary. The parser records review fields and checkpoint status rather than treating every file as equally reliable.
+
+Filings that cannot be parsed cleanly are tracked for fallback or manual review. The published transaction data also retains the original House PDF URL so questionable rows can be checked against the source disclosure.
 
 ## Original notebooks
 
-The `notebooks/` folder preserves the original five Colab notebooks as the
-documented research/development version of the workflow.
+The `notebooks/` directory preserves the original Colab research and development workflow that preceded the automated Python pipeline.
 
-## Next phase
-
-The current starter is intentionally local-first so the conversion can be
-tested against the exact existing Google Drive archive before introducing
-cloud credentials.
-
-After that works, the next step is GitHub Actions:
-- authenticate the persistent Google Drive archive for the runner
-- run daily at 9:30 AM America/New_York
-- copy the public CSV/metadata into a web-accessible location
-- trigger the Quarto portfolio rebuild
+The current scripts in `src/` are the production version used by local runs and GitHub Actions.
