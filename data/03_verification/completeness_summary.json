@@ -63,7 +63,7 @@
       "Missing": 0,
       "Extra": 0,
       "Parser flagged": 45,
-      "Not yet parsed": 1,
+      "Not yet parsed": 0,
       "Complete": true
     }
   ],
@@ -73,7 +73,7 @@
     "missing": 0,
     "extra": 0,
     "parser_flagged": 474,
-    "not_yet_parsed": 1,
+    "not_yet_parsed": 0,
     "all_years_complete": true
   }
 }
